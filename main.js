@@ -31,7 +31,7 @@ class UniversalFileSystem {
     let tokens = inputString.trim().split(" ");
     // 各コマンドの引数は1以上3以下、それ以外は引数エラーとなる
     if (tokens.length < 1 || tokens.length > 3) {
-      return new ValidatorResponse(false, `Invalid number of tokens.`);
+      return new ValidatorResponse(false, `トークンの数が無効です。`);
     }
     return this.tokenValidator(this.commandLineParser(inputString));
   }
@@ -41,7 +41,7 @@ class UniversalFileSystem {
     let arg = CLITokens[1];
 
     if (this.validCommands.indexOf(cmd) == -1) {
-      return new ValidatorResponse(false, `Command must be one of the following: ${this.validCommands.join(",")}`);
+      return new ValidatorResponse(false, `コマンドは以下のいずれかである必要があります: ${this.validCommands.join(",")}`);
     }
 
     if (cmd == 'pwd') {
@@ -70,7 +70,7 @@ class UniversalFileSystem {
 
     if (cmd == 'mkdir') {
       if (this.fs.hasFileOrDir(arg)) {
-          return new ValidatorResponse(false, `File or directory already exists: ${arg}`);
+          return new ValidatorResponse(false, `ファイルまたはディレクトリは既に存在しています: ${arg}`);
       } else {
           return this.createNodePathToValidatorResponse(arg);
       }
@@ -114,13 +114,14 @@ class UniversalFileSystem {
   //   return new ValidatorResponse(true, '');
   // }
 
+  // パスがあるか
   pathToValidatorResponse(path) {
-    return this.fs.hasFileOrDir(path) ? new ValidatorResponse(true, '') : new ValidatorResponse(false, `No such file or directory with path ${path}`);
+    return this.fs.hasFileOrDir(path) ? new ValidatorResponse(true, '') : new ValidatorResponse(false, `以下の指定されたパスにファイルまたはディレクトリが存在しません: ${path}`);
   }
 
   // ファイル名用バリデーション(大文字小文字の英字、数字以外)
   fileOrDirNameToValidatorResponse(name) {
-    return /[^a-zA-Z0-9\s]/.test(name) ? new ValidatorResponse(false, `File name may only contain characters from a-z, A-Z, and 0-9`) : new ValidatorResponse(true, '');
+    return /[^a-zA-Z0-9\s]/.test(name) ? new ValidatorResponse(false, `ファイル名には英字の小文字(a-z)、大文字(A-Z)、および数字(0-9)の文字のみが含まれることができます`) : new ValidatorResponse(true, '');
   }
 
   // コマンド使用時に決められたタイプ以外のノード操作時のバリデーション
@@ -133,7 +134,7 @@ class UniversalFileSystem {
 
     // 操作するタイプが違う場合はエラー処理
     if (this.fs.getFileOrDirByStringPath(path).getType() !== type) {
-      return new ValidatorResponse(false, `${path} is not a ${type}.`);
+      return new ValidatorResponse(false, `${path}は${type}ではありません`);
     }
 
     return new ValidatorResponse(true, '');
@@ -145,12 +146,12 @@ class UniversalFileSystem {
 
     // 親ディレクトリがない場合
     if (!this.fs.hasFileOrDir(dirPathAndFileName[0])) {
-      return new ValidatorResponse(false, `No such target directory ${dirPathAndFileName[0]}`);
+      return new ValidatorResponse(false, `以下のディレクトリは存在しません: ${dirPathAndFileName[0]}`);
     }
 
     // 親ノードのタイプがディレクトリでない場合
     if (this.fs.getFileOrDirByStringPath(dirPathAndFileName[0]).getType() !== 'dir') {
-      return new ValidatorResponse(false, `Target node ${dirPathAndFileName[0]} is not a directory`);
+      return new ValidatorResponse(false, `以下はディレクトリではありません: ${dirPathAndFileName[0]}`);
     }
 
     return this.fileOrDirNameToValidatorResponse(dirPathAndFileName[1]);
@@ -233,7 +234,7 @@ class FileSystem {
   touch(path) {
     if (this.hasFileOrDir(path)) {
       this.getFileOrDirByStringPath(path).setDateModifiedToCurrentDate();
-      return `1 file's date updated: ${path} `;
+      return `ファイルの更新日時: ${path} `;
     }
 
     let dirPathAndFileName = this.getDirPathAndFileName(path);
@@ -242,7 +243,7 @@ class FileSystem {
     let parentDir = this.getFileOrDirByStringPath(parentDirPath);
 
     parentDir.addChild(new Node(fileName, 'file', parentDir, ""));
-    return `1 new file added: ${path}`;
+    return `新しいファイルが追加されました: ${path}`;
   }
 
   mkdir(path) {
@@ -252,12 +253,12 @@ class FileSystem {
     let parentDir = this.getFileOrDirByStringPath(parentDirPath);
     parentDir.addChild(new Node(dirName, 'dir', parentDir));
 
-    return `1 new directory added: ${path}`;
+    return `新しいディレクトリが追加されました: ${path}`;
   }
 
   cd(path) {
     this.currentDir = this.getFileOrDirByStringPath(path);
-    return `changing directory to ${path}`;
+    return `ディレクトリを移動しました: ${path}`;
   }
 
   pwd() {
@@ -268,7 +269,7 @@ class FileSystem {
     let pathTokens = this.pathTokenArray(path);
     let fileName = pathTokens[pathTokens.length-1];
     this.getFileOrDirByStringPath(path).getParent().removeChildByName(fileName);
-    return `removed file or directory ${path}`;
+    return `ファイルまたはディレクトリを削除しました: ${path}`;
   }
 
   print(path) {
@@ -277,7 +278,7 @@ class FileSystem {
 
   setContent(path, newContent) {
     this.getFileOrDirByStringPath(path).setContent(newContent);
-    return `set content of ${path} to ${newContent}`;
+    return `${path} のコンテンツを ${newContent} に設定しました`;
   }
 
   // パス操作をする関数
@@ -316,18 +317,18 @@ class FileSystem {
       curNode = this.root;
       pathTokens.shift();
     } else {
-        curNode = this.currentDir;
+      curNode = this.currentDir;
     }
 
     while (pathTokens.length > 0) {
       let childName = pathTokens.shift();
 
       if (childName == ".." && !curNode.isRoot()) {
-          curNode = curNode.getParent();
+        curNode = curNode.getParent();
       } else if (curNode.hasImmediateChildWithName(childName)) { // 引数の子ノードが存在する場合、カレントノードを子ノードにする
-          curNode = curNode.getChild(childName);
+        curNode = curNode.getChild(childName);
       } else {
-          return false;
+        return false;
       }
     }
 
@@ -481,13 +482,15 @@ class Node {
   // 日時を文字列化
   getDateModifiedAsString(){
     const date = this.dateModified;
-    return date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate() + "-" + date.getHours() + ":" + date.getMinutes();
+    return `${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日${date.getHours()}時${date.getMinutes()}分${date.getSeconds()}秒`;
   }
 
   // ファイル表示用関数
   getFileListingAsString(){
-    return `${this.getDateModifiedAsString()} ${this.getType()} ${this.getName()}`
+    const name = this.isDir() ? 'ディレクトリ名' : 'ファイル名'
+    return `最終更新日時: ${this.getDateModifiedAsString()} 種類:${this.getType()} ${name}: ${this.getName()}`
   }
+  
 
   // ファイル作成時、更新日時を現在日時にする
   setDateModifiedToCurrentDate(){
