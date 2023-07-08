@@ -2,16 +2,8 @@
 class UniversalFileSystem {
   // 初期化
   constructor() {
-    this.cliHistory      = []; // @TODO イベントキーは削除
-    this.cliHistoryIndex = -1; // @TODO イベントキーは削除
     this.fs              = new FileSystem();
     this.validCommands   = this.fs.getValidCommands();
-  }
-
-  // 入力値からcliHistory、cliHistoryIndexの値を更新する関数
-  addCLIHistory(inputString) {
-    this.cliHistory.push(inputString);
-    this.cliHistoryIndex = this.cliHistory.length - 1;
   }
 
   // 入力値を解析する関数
@@ -77,42 +69,11 @@ class UniversalFileSystem {
     }
 
     if (cmd == 'rm') {
-      // rmのバリデーションは今のところ特になし
-      // return new ValidatorResponse(true, '');
+      return this.pathToValidatorResponse(arg);
     }
 
     return new ValidatorResponse(true, '');
   }
-
-//   checkNodeTypeValidator(path, type) {
-//       if (!this.fs.hasFileOrDir(path)) {
-//           return new ValidatorResponse(false, `No such file or directory with path ${path}`);
-//       }
-// alert(10)
-//       const nodeType = this.fs.getNodeTypeByStringPath(path);
-
-//       if (nodeType !== type) {
-//           return new ValidatorResponse(false, `Path ${path} is not a ${type}`);
-//       }
-
-//       return new ValidatorResponse(true, '');
-//   }
-
-  // createNodePathToValidatorResponse(path) {
-  //   const parentDirPath = this.fs.getParentDirectoryPath(path);
-
-  //   if (!this.fs.exists(parentDirPath)) {
-  //       return new ValidatorResponse(false, `Parent directory does not exist.`);
-  //   }
-
-  //   const fileName = this.fs.getDirectoryNameFromPath(path);
-
-  //   if (!this.fs.isValidName(fileName)) {
-  //       return new ValidatorResponse(false, `Invalid file name.`);
-  //   }
-
-  //   return new ValidatorResponse(true, '');
-  // }
 
   // パスがあるか
   pathToValidatorResponse(path) {
@@ -121,7 +82,7 @@ class UniversalFileSystem {
 
   // ファイル名用バリデーション(大文字小文字の英字、数字以外)
   fileOrDirNameToValidatorResponse(name) {
-    return /[^a-zA-Z0-9\s]/.test(name) ? new ValidatorResponse(false, `ファイル名には英字の小文字(a-z)、大文字(A-Z)、および数字(0-9)の文字のみが含まれることができます`) : new ValidatorResponse(true, '');
+    return /[^a-zA-Z0-9\s]/.test(name) ? new ValidatorResponse(false, `ファイル名には英字の小文字(a-z)、大文字(A-Z)、および数字(0-9)の文字のみを含めることができます`) : new ValidatorResponse(true, '');
   }
 
   // コマンド使用時に決められたタイプ以外のノード操作時のバリデーション
@@ -586,7 +547,6 @@ function submitCLIInput(event) {
     fsCLI.appendParagraph(CLIOutputDiv); // 入力値を元に、Paragraphを追加
 
     let CLIInputString = CLITextInput.value.trim();
-    fsCLI.addCLIHistory(CLIInputString); // UniversalFileSystemインスタンス更新関数を実行
 
     let validator = fsCLI.inputStringValidator(CLIInputString);
     if (validator.isValid) {
